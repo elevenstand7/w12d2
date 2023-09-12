@@ -8,6 +8,21 @@ class User < ApplicationRecord
 
   before_validation :ensure_session_token
 
+  def self.find_by_credentials(credential, password)
+    if credential =~ URI::MailTo::EMAIL_REGEXP
+      field = :email
+    else
+      field = :username
+    end
+    user = User.find_by(field => credential)
+    user&.authenticate(password)? user : nil
+  end
+
+  def reset_session_token!
+    self.update!(session_token: generate_unique_session_token)
+    self.session_token
+  end
+
   def generate_unique_session_token
     while true
         token = SecureRandom.base64
